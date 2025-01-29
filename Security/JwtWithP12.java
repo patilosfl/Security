@@ -16,6 +16,41 @@ public class JwtWithP12 {
     private static final String P12_FILE_PATH = "path/to/your/certificate.p12";
     private static final String KEYSTORE_PASSWORD = "changeit";
     private static final String ALIAS = "your-key-alias";
+    
+    
+    
+    
+    private static PrivateKey getPrivateKey2() throws Exception {
+        FileInputStream fis = new FileInputStream(P12_FILE_PATH);
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        keyStore.load(fis, KEYSTORE_PASSWORD.toCharArray());
+
+        // List all aliases to verify the alias is correct
+        System.out.println("Available Aliases:");
+        var aliases = keyStore.aliases();
+        while (aliases.hasMoreElements()) {
+            System.out.println("  - " + aliases.nextElement());
+        }
+
+        // Check if the alias exists
+        if (!keyStore.containsAlias(ALIAS)) {
+            throw new RuntimeException("Alias '" + ALIAS + "' not found in keystore!");
+        }
+
+        // Retrieve the key
+        Key key = keyStore.getKey(ALIAS, KEYSTORE_PASSWORD.toCharArray());
+
+        if (key == null) {
+            throw new RuntimeException("Private key not found! Ensure the alias is correct.");
+        }
+
+        if (!(key instanceof PrivateKey)) {
+            throw new RuntimeException("The key is not a private key!");
+        }
+
+        return (PrivateKey) key;
+    }
+
 
     private static PrivateKey getPrivateKey() throws Exception {
         FileInputStream fis = new FileInputStream(P12_FILE_PATH);
