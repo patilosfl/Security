@@ -1,2 +1,56 @@
 
-sss
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureException;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+
+import java.io.FileInputStream;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.PublicKey;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Base64;
+
+public class JwtValidator {
+
+    // Load X.509 certificate from a file and extract public key
+    public static PublicKey loadPublicKeyFromCertificate(String certPath) throws Exception {
+        try (FileInputStream fis = new FileInputStream(certPath)) {
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            X509Certificate certificate = (X509Certificate) certificateFactory.generateCertificate(fis);
+            return certificate.getPublicKey();
+        }
+    }
+
+    // Validate JWT token using public key
+    public static void validateJwt(String jwtToken, PublicKey publicKey) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(publicKey)
+                    .build()
+                    .parseClaimsJws(jwtToken)
+                    .getBody();
+
+            System.out.println("JWT is valid. Claims: " + claims);
+        } catch (SignatureException e) {
+            System.err.println("Invalid JWT signature: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("JWT validation failed: " + e.getMessage());
+        }
+    }
+
+    public static void main(String[] args) {
+        try {
+            String certPath = "path/to/your/certificate.pem"; // Update with actual certificate path
+            String jwtToken = "your.jwt.token.here"; // Replace with actual JWT token
+
+            PublicKey publicKey = loadPublicKeyFromCertificate(certPath);
+            validateJwt(jwtToken, publicKey);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
